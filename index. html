@@ -1,0 +1,91 @@
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+
+// Set canvas size to the window size
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Adjust canvas size on window resize
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+// Define the center and radius of the planet
+var centerX = canvas.width / 2;
+var centerY = canvas.height / 2;
+var radius = Math.min(canvas.width, canvas.height) / 3;
+
+// Generate random points on the surface of a sphere
+var points = [];
+var numPoints = 500;
+for (var i = 0; i < numPoints; i++) {
+    var phi = Math.acos(2 * Math.random() - 1); // Angle from the z-axis
+    var theta = Math.random() * 2 * Math.PI;   // Angle from the x-axis
+    points.push({ phi, theta });
+}
+
+// Rotation angles
+var angleX = 0;
+var angleY = 0;
+
+function draw() {
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw each point
+    points.forEach(point => {
+        // Convert spherical coordinates to Cartesian coordinates
+        var x = radius * Math.sin(point.phi) * Math.cos(point.theta);
+        var y = radius * Math.sin(point.phi) * Math.sin(point.theta);
+        var z = radius * Math.cos(point.phi);
+
+        // Rotate around the X-axis
+        var tempY = y * Math.cos(angleX) - z * Math.sin(angleX);
+        var tempZ = y * Math.sin(angleX) + z * Math.cos(angleX);
+        y = tempY;
+        z = tempZ;
+
+        // Rotate around the Y-axis
+        var tempX = x * Math.cos(angleY) + z * Math.sin(angleY);
+        z = -x * Math.sin(angleY) + z * Math.cos(angleY);
+        x = tempX;
+
+        // Apply perspective projection
+        var perspective = 600 / (400 + z);
+        var screenX = centerX + x * perspective;
+        var screenY = centerY - y * perspective;
+        var size = 1 * perspective;
+
+        // Draw the point
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+        ctx.arc(screenX + 12, screenY - 12, size / 2, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${(point.theta / (2 * Math.PI)) * 360}, 100%, 25%, 1)`;
+        ctx.fill();
+
+        // Additional decorative circles for visual effect
+        ctx.beginPath();
+        ctx.arc(centerX + x / 7 * perspective, centerY - y / 7 * perspective, size * 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${(point.phi / Math.PI) * 60}, 100%, 50%, 0.9)`;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(centerX + x / 7 * perspective, centerY - y / 7 * perspective, size * 3, 0, Math.PI * 1);
+        ctx.fillStyle = `hsl(${(point.phi / Math.PI) * 60}, 100%, 50%, 0.9)`;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(centerX + (x / 12) * 5.5 * perspective, centerY - (y / 16) * perspective, size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgb(${(point.theta / Math.PI) * 360}, ${(point.theta / (2 * Math.PI)) * 260}, 50, 0.5)`;
+        ctx.fill();
+    });
+
+    // Increment rotation angles
+    angleX += 0.0025;
+    angleY += 0.0055;
+
+    // Request the next frame
+    requestAnimationFrame(draw);
+}
+
+// Start the animation
+draw();
